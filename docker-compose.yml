@@ -1,0 +1,35 @@
+services:
+  firefox:
+    image: jlesage/firefox:latest
+    ports:
+      - "5800:5800"
+    volumes:
+      - firefox_data:/config
+    environment:
+      - TZ=Europe/Warsaw
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:5800 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  dashboard:
+    build: ./dashboard
+    ports:
+      - "8777:8777"
+    volumes:
+      - firefox_data:/firefox:ro
+    environment:
+      - TZ=Europe/Warsaw
+      - REFRESH_INTERVAL=300
+      - DEBUG=false
+      - ZAI_API_KEY=${ZAI_API_KEY:-}
+    depends_on:
+      firefox:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  firefox_data:
